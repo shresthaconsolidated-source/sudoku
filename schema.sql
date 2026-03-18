@@ -8,6 +8,7 @@ create table if not exists users (
   first_name text,
   avatar_url text,
   total_completed integer default 0,
+  total_started integer default 0,
   win_rate numeric default 0.0,
   mmr integer default 1000,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
@@ -48,7 +49,8 @@ create table if not exists rooms (
 -- Game State Table (Live sync)
 create table if not exists game_state (
   room_id varchar(6) references public.rooms(id) primary key,
-  current_grid jsonb not null, -- Stores user inputs + pencil notes
+  current_grid jsonb not null, -- Stores user inputs + pencil notes + filled_by
+  mistakes_count integer default 0,
   start_time timestamp with time zone,
   end_time timestamp with time zone
 );
@@ -59,6 +61,7 @@ create table if not exists leaderboard (
   puzzle_id integer references public.puzzles(id) not null,
   player_names text[] not null,
   time_taken_seconds integer not null,
+  mistakes integer default 0,
   completed_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
@@ -75,7 +78,17 @@ BEGIN
   SET total_completed = total_completed + 1
   WHERE id = target_user_id;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Use via supabase.rpc('increment_started', { target_user_id: '...' })
+CREATE OR REPLACE FUNCTION increment_started(target_user_id uuid)
+RETURNS void AS $$
+BEGIN
+  UPDATE users 
+  SET total_started = total_started + 1
+  WHERE id = target_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Use via supabase.rpc('increment_mmr', { target_user_id: '...', amount: 20 })
 CREATE OR REPLACE FUNCTION increment_mmr(target_user_id uuid, amount int)
@@ -85,4 +98,4 @@ BEGIN
   SET mmr = mmr + amount
   WHERE id = target_user_id;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

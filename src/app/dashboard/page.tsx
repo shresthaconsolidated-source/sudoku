@@ -1,11 +1,11 @@
 import { createClient } from '@/utils/supabase/server'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Trophy, Swords, Zap, Users } from 'lucide-react'
 import Link from 'next/link'
 import JoinRoomForm from './join-room-form'
-
 import RankBadge from '@/components/ui/rank-badge'
+import MatchHistoryModal from '@/components/match-history-modal'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -36,19 +36,33 @@ export default async function DashboardPage() {
 
       <div className="grid gap-6 md:grid-cols-3">
         {[
-          { label: 'Total Completed', value: profile?.total_completed || 0, icon: Trophy, color: 'text-yellow-400' },
-          { label: 'Win Rate', value: `${profile?.win_rate || '0'}%`, icon: Zap, color: 'text-primary' },
-          { label: 'MMR Rating', value: profile?.mmr || 1000, icon: Swords, color: 'text-secondary' },
+          { id: 'completed', label: 'Total Completed', value: profile?.total_completed || 0, icon: Trophy, color: 'text-yellow-400', interactive: true },
+          { id: 'winrate', label: 'Win Rate', value: `${profile?.win_rate || '0'}%`, icon: Zap, color: 'text-primary', interactive: true },
+          { id: 'mmr', label: 'MMR Rating', value: profile?.mmr || 1000, icon: Swords, color: 'text-secondary', interactive: false },
         ].map((stat, i) => (
-          <Card key={i} className="bg-card/40 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden shadow-xl">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-bold tracking-wider uppercase text-slate-400">{stat.label}</CardTitle>
-              <stat.icon className={`h-5 w-5 ${stat.color} drop-shadow-[0_0_8px_currentColor]`} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-black text-white">{stat.value}</div>
-            </CardContent>
-          </Card>
+          stat.interactive ? (
+            <MatchHistoryModal key={i} userId={user.id}>
+              <Card className="bg-card/40 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden shadow-xl cursor-pointer hover:border-primary/50 transition-all hover:scale-[1.02] active:scale-95 group">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-bold tracking-wider uppercase text-slate-400">{stat.label}</CardTitle>
+                  <stat.icon className={`h-5 w-5 ${stat.color} drop-shadow-[0_0_8px_currentColor] group-hover:scale-110 transition-transform`} />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-black text-white">{stat.value}</div>
+                </CardContent>
+              </Card>
+            </MatchHistoryModal>
+          ) : (
+            <Card key={i} className="bg-card/40 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden shadow-xl">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-bold tracking-wider uppercase text-slate-400">{stat.label}</CardTitle>
+                <stat.icon className={`h-5 w-5 ${stat.color} drop-shadow-[0_0_8px_currentColor]`} />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-black text-white">{stat.value}</div>
+              </CardContent>
+            </Card>
+          )
         ))}
       </div>
 
@@ -93,4 +107,8 @@ export default async function DashboardPage() {
       </div>
     </div>
   )
+}
+
+function CardDescription({ children, className }: { children: React.ReactNode, className?: string }) {
+  return <p className={className}>{children}</p>
 }

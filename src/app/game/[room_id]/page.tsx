@@ -42,10 +42,13 @@ export default async function GamePage(props: { params: Promise<{ room_id: strin
     .single()
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col relative overflow-hidden">
-       {/* Background decorative glow */}
-       <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full -z-10" />
-       <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-secondary/5 blur-[120px] rounded-full -z-10" />
+    <div className="min-h-screen bg-[#0A0A0A] text-foreground flex flex-col relative overflow-hidden">
+       {/* Background Blobs */}
+       <div className="absolute top-0 -left-20 w-96 h-96 bg-primary/10 blur-[120px] rounded-full -z-10 animate-pulse" />
+       <div className="absolute bottom-40 -right-20 w-[500px] h-[500px] bg-secondary/10 blur-[150px] rounded-full -z-10" />
+       
+       {/* Grid Pattern */}
+       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
        
        <Navbar />
        <main className="flex-1 w-full mx-auto p-2 sm:p-4 relative z-10">

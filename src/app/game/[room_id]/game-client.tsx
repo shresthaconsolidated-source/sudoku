@@ -55,8 +55,9 @@ export default function GameClient({ room, initialGameState, currentUser }: { ro
   const [gameState, setGameState] = useState(initialGameState)
   const [elapsed, setElapsed] = useState(0)
   const [isFinished, setIsFinished] = useState(room.status === 'completed')
-  const [mistakes, setMistakes] = useState(0)
+  const [mistakes, setMistakes] = useState(initialGameState?.mistakes_count || 0)
   const [opponentCursor, setOpponentCursor] = useState<{r: number, c: number, name?: string} | null>(null)
+  const [lockedCells, setLockedCells] = useState<Record<string, { userId: string, name: string }>>({})
   const isLocalUpdate = useRef(false)
   const channelRef = useRef<any>(null)
 
@@ -74,22 +75,17 @@ export default function GameClient({ room, initialGameState, currentUser }: { ro
     return () => clearInterval(interval)
   }, [gameState.start_time, isFinished])
 
-  // Count mistakes & Win logic
+  // Win logic (Mistakes are now synced from DB)
   useEffect(() => {
     if (!gameState?.current_grid) return
-    let m = 0
-    const solution = room.puzzle.solution_grid
-    gameState.current_grid.forEach((row: any[], r: number) => {
-      row.forEach((cell: any, c: number) => {
-        if (cell && !cell.isGiven && cell.value !== null && cell.value !== solution[r][c]) {
-          m++
-        }
-      })
-    })
     
-    if (m > mistakes) playMistakeSound()
-    setMistakes(m)
+    // Update local mistakes from DB state
+    if (gameState.mistakes_count !== undefined) {
+      if (gameState.mistakes_count > mistakes) playMistakeSound()
+      setMistakes(gameState.mistakes_count)
+    }
 
+    const solution = room.puzzle.solution_grid
     let isComplete = true
     gameState.current_grid.forEach((row: any[], r: number) => {
       row.forEach((cell: any, c: number) => {
@@ -102,7 +98,7 @@ export default function GameClient({ room, initialGameState, currentUser }: { ro
     if (isComplete && !isFinished) {
       handleWin()
     }
-  }, [gameState.current_grid, room.puzzle.solution_grid, isFinished, mistakes])
+  }, [gameState.current_grid, gameState.mistakes_count, room.puzzle.solution_grid, isFinished])
 
   const handleWin = async () => {
     if (isFinished) return
@@ -132,6 +128,12 @@ export default function GameClient({ room, initialGameState, currentUser }: { ro
       supabase.from('game_state').update({ end_time: new Date().toISOString() }).eq('room_id', room.id)
     ]
 
+    // Self-service stats update: each player updates their own stats
+    updates.push(supabase.from('user_progress').upsert({ user_id: currentUser, difficulty: room.difficulty, last_completed_puzzle_id: room.puzzle_id }))
+    updates.push(supabase.rpc('increment_completed', { target_user_id: currentUser }))
+    updates.push(supabase.rpc('increment_mmr', { target_user_id: currentUser, amount: 25 }))
+
+    // Leaderboard insertion (only the host handles the global record)
     if (currentUser === room.host_id) {
        const playerNames = [room.host.first_name]
        if (room.joiner) playerNames.push(room.joiner.first_name)
@@ -140,35 +142,39 @@ export default function GameClient({ room, initialGameState, currentUser }: { ro
          player_names: playerNames,
          time_taken_seconds: elapsed
        }))
-
-       // Update user_progress and MMR for both
-       updates.push(supabase.from('user_progress').upsert({ user_id: room.host_id, difficulty: room.difficulty, last_completed_puzzle_id: room.puzzle_id }))
-       updates.push(supabase.rpc('increment_completed', { target_user_id: room.host_id }))
-       updates.push(supabase.rpc('increment_mmr', { target_user_id: room.host_id, amount: 25 }))
-
-       if (room.joiner_id) {
-         updates.push(supabase.from('user_progress').upsert({ user_id: room.joiner_id, difficulty: room.difficulty, last_completed_puzzle_id: room.puzzle_id }))
-         updates.push(supabase.rpc('increment_completed', { target_user_id: room.joiner_id }))
-         updates.push(supabase.rpc('increment_mmr', { target_user_id: room.joiner_id, amount: 25 }))
-       }
     }
     
     await Promise.allSettled(updates)
   }
 
-  // Calculate team progress
-  const getProgress = () => {
-    if (!gameState?.current_grid) return 0
-    let filled = 0
+  // Calculate individual contributions
+  const getContribution = () => {
+    if (!gameState?.current_grid) return { host: 0, joiner: 0, total: 0 }
+    let hostFilled = 0
+    let joinerFilled = 0
+    let totalCorrect = 0
     const solution = room.puzzle.solution_grid
+    
     gameState.current_grid.forEach((row: any[], r: number) => {
       row.forEach((cell: any, c: number) => {
-        if (cell?.value === solution[r][c]) filled++
+        if (cell?.value === solution[r][c]) {
+          totalCorrect++
+          if (!cell.isGiven) {
+            if (cell.filled_by === room.host_id) hostFilled++
+            if (cell.filled_by === room.joiner_id) joinerFilled++
+          }
+        }
       })
     })
-    return Math.floor((filled / 81) * 100)
+
+    const totalEmpty = 81 - gameState.current_grid.flat().filter((c: any) => c.isGiven).length
+    return {
+      host: room.host_id ? Math.floor((hostFilled / totalEmpty) * 100) : 0,
+      joiner: room.joiner_id ? Math.floor((joinerFilled / totalEmpty) * 100) : 0,
+      total: Math.floor((totalCorrect / 81) * 100)
+    }
   }
-  const progress = getProgress()
+  const contribution = getContribution()
 
   // Realtime subscription
   useEffect(() => {
@@ -182,10 +188,21 @@ export default function GameClient({ room, initialGameState, currentUser }: { ro
         if (payload.new.status === 'completed') setIsFinished(true)
       })
       .on('broadcast', { event: 'cursor-pos' }, (payload) => {
-         // Only track opponent cursor, not our own bounceback
          if (payload.payload.userId !== currentUser) {
            setOpponentCursor(payload.payload)
+           // Automatically lock the cell for the opponent
+           setLockedCells(prev => ({
+             ...prev,
+             [`${payload.payload.r}-${payload.payload.c}`]: { userId: payload.payload.userId, name: payload.payload.name }
+           }))
          }
+      })
+      .on('broadcast', { event: 'cell-unlock' }, (payload) => {
+         setLockedCells(prev => {
+           const next = { ...prev }
+           delete next[`${payload.payload.r}-${payload.payload.c}`]
+           return next
+         })
       })
       .subscribe()
       
@@ -194,19 +211,49 @@ export default function GameClient({ room, initialGameState, currentUser }: { ro
   }, [room.id, supabase, currentUser])
 
   const handleCellUpdate = async (r: number, c: number, newCellData: any, newBoard: any) => {
+    const isCorrect = newCellData.value === room.puzzle.solution_grid[r][c]
+    const wasMistake = newCellData.value !== null && !isCorrect
+    
+    // If it's correct, mark who did it
+    if (isCorrect) {
+      newBoard[r][c].filled_by = currentUser
+    }
+
     playPopSound()
+    if (wasMistake) playMistakeSound()
+
     isLocalUpdate.current = true
-    setGameState((prev: any) => ({ ...prev, current_grid: newBoard }))
-    await supabase.from('game_state').update({ current_grid: newBoard }).eq('room_id', room.id)
+    setGameState((prev: any) => ({ 
+      ...prev, 
+      current_grid: newBoard,
+      mistakes_count: wasMistake ? (prev.mistakes_count || 0) + 1 : prev.mistakes_count
+    }))
+
+    const updates: any = { current_grid: newBoard }
+    if (wasMistake) {
+      updates.mistakes_count = (gameState.mistakes_count || 0) + 1
+    }
+
+    await supabase.from('game_state').update(updates).eq('room_id', room.id)
   }
 
-  const handleCursorMove = (r: number, c: number) => {
+  const handleCursorMove = (r: number, c: number, prevR?: number, prevC?: number) => {
      if (channelRef.current) {
+       // Unlock previous cell if any
+       if (prevR !== undefined && prevC !== undefined) {
+         channelRef.current.send({
+           type: 'broadcast',
+           event: 'cell-unlock',
+           payload: { r: prevR, c: prevC, userId: currentUser }
+         })
+       }
+       
+       // Lock new cell
        channelRef.current.send({
          type: 'broadcast',
          event: 'cursor-pos',
          payload: { r, c, name: myName, userId: currentUser }
-       }).catch(() => {}) // Ignore errors if channel isn't fully ready
+       }).catch(() => {})
      }
   }
 
@@ -255,22 +302,36 @@ export default function GameClient({ room, initialGameState, currentUser }: { ro
         </div>
       </div>
 
-      {/* Progress Bar */}
+      {/* Dual Progress Bar */}
       <motion.div 
         initial={{ scaleX: 0 }}
         animate={{ scaleX: 1 }}
         className="w-full max-w-lg px-2 mb-6"
       >
         <div className="flex justify-between items-center mb-2 px-1">
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Global Progress</span>
-          <span className="text-[10px] font-black uppercase tracking-widest text-primary">{progress}%</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-[#00E5FF]">
+             {room.host.first_name}: {contribution.host}%
+          </span>
+          {room.joiner && (
+            <span className="text-[10px] font-black uppercase tracking-widest text-[#FF0055]">
+               {room.joiner.first_name}: {contribution.joiner}%
+            </span>
+          )}
         </div>
-        <div className="h-1.5 w-full bg-slate-800/50 rounded-full overflow-hidden border border-white/5 relative">
+        <div className="h-2.5 w-full bg-slate-800/50 rounded-full overflow-hidden border border-white/5 flex">
           <motion.div 
             initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-secondary shadow-[0_0_10px_rgba(0,229,255,0.5)]"
+            animate={{ width: `${contribution.host}%` }}
+            className="h-full bg-[#00E5FF] shadow-[0_0_15px_rgba(0,229,255,0.4)]"
           />
+          <motion.div 
+            initial={{ width: 0 }}
+            animate={{ width: `${contribution.joiner}%` }}
+            className="h-full bg-[#FF0055] shadow-[0_0_15px_rgba(255,0,85,0.4)]"
+          />
+        </div>
+        <div className="mt-2 text-center">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Completion: {contribution.total}%</span>
         </div>
       </motion.div>
 
@@ -281,6 +342,8 @@ export default function GameClient({ room, initialGameState, currentUser }: { ro
         onCellUpdate={handleCellUpdate}
         onCursorMove={handleCursorMove}
         opponentCursor={opponentCursor}
+        lockedCells={lockedCells}
+        currentUser={currentUser}
       />
 
       {/* Victory Overlay */}
@@ -308,14 +371,25 @@ export default function GameClient({ room, initialGameState, currentUser }: { ro
                     <p className="text-slate-500 font-black tracking-widest text-xs uppercase">FINISH TIME</p>
                     <p className="text-6xl font-black tracking-tighter text-white tabular-nums drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">{formatTime(elapsed)}</p>
                   </div>
-                  
-                  <div className="bg-white/5 rounded-3xl p-6 text-left border border-white/10 shadow-inner">
-                    <p className="text-[10px] font-black text-slate-500 mb-4 uppercase tracking-[0.2em]">Leaderboard Snapshot</p>
-                    <div className="flex justify-between items-center bg-primary/10 border border-primary/20 rounded-xl px-4 py-3">
-                      <span className="font-bold text-white text-sm">1. YOUR TEAM</span>
-                      <span className="font-black text-primary text-sm tabular-nums">{formatTime(elapsed)}</span>
-                    </div>
-                  </div>
+                                    <div className="bg-white/5 rounded-3xl p-6 text-left border border-white/10 shadow-inner">
+                     <p className="text-[10px] font-black text-slate-500 mb-4 uppercase tracking-[0.2em]">Match Analytics</p>
+                     <div className="space-y-3">
+                       <div className="flex justify-between items-center bg-primary/10 border border-primary/20 rounded-xl px-4 py-3">
+                         <span className="font-bold text-white text-xs uppercase">🏆 {room.host.first_name}</span>
+                         <span className="font-black text-primary text-xs">{contribution.host}% Contribution</span>
+                       </div>
+                       {room.joiner && (
+                         <div className="flex justify-between items-center bg-secondary/10 border border-secondary/20 rounded-xl px-4 py-3">
+                           <span className="font-bold text-white text-xs uppercase">⚔️ {room.joiner.first_name}</span>
+                           <span className="font-black text-secondary text-xs">{contribution.joiner}% Contribution</span>
+                         </div>
+                       )}
+                       <div className="flex justify-between items-center bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+                         <span className="font-bold text-white text-xs uppercase">⚠️ Total Mistakes</span>
+                         <span className="font-black text-red-500 text-xs">{mistakes} Points</span>
+                       </div>
+                     </div>
+                   </div>
 
                   <Link href="/dashboard" className="block w-full py-5 bg-white hover:bg-slate-100 text-black font-black rounded-2xl transition-all shadow-xl hover:scale-[1.02] active:scale-95 text-lg uppercase tracking-tight">
                     Return to Hub

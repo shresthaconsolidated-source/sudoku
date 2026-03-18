@@ -105,14 +105,28 @@ export default function LobbyClient({ initialRoom, currentUser }: { initialRoom:
     const { data: puzzle } = await supabase.from('puzzles').select('initial_grid').eq('id', room.puzzle_id).single()
     
     const mappedGrid = puzzle?.initial_grid?.map((row: any[]) => 
-      row.map(val => ({ value: val, notes: [], isGiven: val !== null, isError: false }))
+      row.map(val => ({ 
+        value: val, 
+        notes: [], 
+        isGiven: val !== null, 
+        isError: false,
+        filled_by: val !== null ? room.host_id : null // Given numbers belong to the host/system
+      }))
     ) || []
 
-    await supabase.from('game_state').insert({
-      room_id: room.id,
-      current_grid: mappedGrid,
-      start_time: new Date().toISOString()
-    })
+    await Promise.all([
+      supabase.from('game_state').insert({
+        room_id: room.id,
+        current_grid: mappedGrid,
+        mistakes_count: 0,
+        start_time: new Date().toISOString()
+      }),
+      supabase.rpc('increment_started', { target_user_id: room.host_id })
+    ])
+
+    if (room.joiner_id) {
+      await supabase.rpc('increment_started', { target_user_id: room.joiner_id })
+    }
 
     // Update room status to trigger navigation for everyone
     await supabase.from('rooms').update({ status: 'active' }).eq('id', room.id)
