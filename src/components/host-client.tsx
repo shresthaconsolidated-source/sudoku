@@ -59,7 +59,7 @@ export default function HostClient() {
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Match Configuration</span>
           </div>
-          <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-4">
+          <h1 className="text-4xl md:text-7xl font-black tracking-tighter mb-4">
             Initialize <span className="text-primary italic">Battle</span>
           </h1>
           <p className="text-slate-400 font-bold max-w-md mx-auto">

@@ -155,9 +155,21 @@ export default function SudokuBoard({ initialGrid, solutionGrid, currentGrid, op
     return () => window.removeEventListener('keydown', listener)
   }, [handleKeyDown])
 
+  const completedNumbers = useMemo(() => {
+    const counts = new Array(10).fill(0)
+    board.forEach((row, r) => {
+      row.forEach((cell, c) => {
+        if (cell.value !== null && cell.value === solutionGrid[r][c]) {
+          counts[cell.value]++
+        }
+      })
+    })
+    return counts.map(count => count === 9)
+  }, [board, solutionGrid])
+
   return (
-    <div className="flex flex-col items-center select-none w-full max-w-lg mx-auto px-4">
-      <div className="grid grid-cols-9 grid-rows-9 gap-0 border-[6px] border-slate-800/80 bg-slate-900/50 w-full aspect-square touch-manipulation rounded-xl overflow-hidden shadow-2xl shadow-primary/5 transition-transform duration-500">
+    <div className="flex flex-col items-center select-none w-full max-w-lg mx-auto px-1 sm:px-4">
+      <div className="grid grid-cols-9 grid-rows-9 gap-0 border-[4px] sm:border-[6px] border-slate-800/80 bg-slate-900/50 w-full aspect-square touch-manipulation rounded-xl overflow-hidden shadow-2xl shadow-primary/5 transition-transform duration-500">
         {board.map((row, r) =>
           row.map((cell, c) => {
             const isSelected = selectedCell?.r === r && selectedCell?.c === c
@@ -193,16 +205,16 @@ export default function SudokuBoard({ initialGrid, solutionGrid, currentGrid, op
         )}
       </div>
 
-      <div className="flex items-center justify-between w-full mt-10 gap-4">
+      <div className="flex items-center justify-between w-full mt-6 sm:mt-10 gap-2 sm:gap-4">
          <button
-           className={`flex-1 h-14 rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl flex items-center justify-center gap-2 ${isNotesMode ? 'bg-primary text-black shadow-primary/20 scale-105' : 'bg-white/5 text-slate-400 hover:bg-white/10 border border-white/10'}`}
+           className={`flex-1 h-12 sm:h-14 rounded-xl sm:rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl flex items-center justify-center gap-2 text-xs sm:text-base ${isNotesMode ? 'bg-primary text-black shadow-primary/20 scale-105' : 'bg-white/5 text-slate-400 hover:bg-white/10 border border-white/10'}`}
            onClick={() => setIsNotesMode(!isNotesMode)}
          >
            {isNotesMode ? '✍️ Notes: ON' : '✏️ Notes'}
          </button>
 
          <button
-           className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest bg-white/5 text-destructive hover:bg-destructive/10 border border-destructive/10 transition-all shadow-xl"
+           className="flex-1 h-12 sm:h-14 rounded-xl sm:rounded-2xl font-black uppercase tracking-widest bg-white/5 text-destructive hover:bg-destructive/10 border border-destructive/10 transition-all shadow-xl text-xs sm:text-base"
            onClick={() => {
              if (selectedCell && !board[selectedCell.r][selectedCell.c].isGiven) {
                 handleKeyDown({ key: 'Backspace' })
@@ -213,16 +225,23 @@ export default function SudokuBoard({ initialGrid, solutionGrid, currentGrid, op
          </button>
       </div>
 
-      <div className="grid grid-cols-9 gap-2 w-full mt-8">
+      <div className="grid grid-cols-5 sm:grid-cols-9 gap-2 w-full mt-6 sm:mt-8">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
           <button
             key={num}
-            className="aspect-square bg-white/5 hover:bg-primary/20 hover:text-primary rounded-xl text-xl sm:text-2xl font-black text-slate-300 transition-all border border-white/10 shadow-xl group overflow-hidden relative"
+            className={`aspect-square sm:aspect-square bg-white/5 hover:bg-primary/20 hover:text-primary rounded-xl text-xl sm:text-2xl font-black transition-all border border-white/10 shadow-xl group overflow-hidden relative flex flex-col items-center justify-center ${completedNumbers[num] ? 'opacity-40 grayscale pointer-events-none' : 'text-slate-300'}`}
             onClick={() => {
               if (selectedCell) handleKeyDown({ key: num.toString() })
             }}
           >
             <span className="relative z-10">{num}</span>
+            {completedNumbers[num] && (
+              <div className="absolute inset-0 flex items-center justify-center bg-primary/20">
+                <svg className="w-6 h-6 text-primary drop-shadow-[0_0_8px_rgba(0,229,255,1)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+            )}
             <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors" />
           </button>
         ))}

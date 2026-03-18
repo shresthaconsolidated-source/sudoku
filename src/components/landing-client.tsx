@@ -53,14 +53,14 @@ export default function LandingClient() {
             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Competitive Beta Live</span>
           </div>
 
-          <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-none mb-8">
+          <h1 className="text-4xl sm:text-6xl md:text-8xl font-black tracking-tighter leading-none mb-8">
             Master the Grid. <br />
             <span className="bg-gradient-to-r from-primary via-white to-secondary bg-clip-text text-transparent italic drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
               Together.
             </span>
           </h1>
 
-          <p className="max-w-xl text-lg md:text-xl text-slate-400 font-bold leading-relaxed mb-12">
+          <p className="max-w-xl text-base sm:text-lg md:text-xl text-slate-400 font-bold leading-relaxed mb-12">
             The world's first competitive multiplayer Sudoku platform with real-time presence and MMR rankings.
           </p>
 
