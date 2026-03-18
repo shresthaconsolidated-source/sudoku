@@ -42,9 +42,13 @@ export default async function GamePage(props: { params: Promise<{ room_id: strin
     .single()
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex flex-col relative overflow-hidden">
+       {/* Background decorative glow */}
+       <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full -z-10" />
+       <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-secondary/5 blur-[120px] rounded-full -z-10" />
+       
        <Navbar />
-       <main className="flex-1 w-full mx-auto p-2 sm:p-4">
+       <main className="flex-1 w-full mx-auto p-2 sm:p-4 relative z-10">
           <GameClient 
             room={room} 
             initialGameState={gameState!} 

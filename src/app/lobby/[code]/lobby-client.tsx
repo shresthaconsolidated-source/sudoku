@@ -117,82 +117,95 @@ export default function LobbyClient({ initialRoom, currentUser }: { initialRoom:
   }
 
   return (
-    <div className="max-w-3xl mx-auto mt-8 animate-in fade-in zoom-in-95 duration-500">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-extrabold tracking-tight mb-2">Room: {room.id}</h1>
-        <p className="text-muted-foreground text-lg">Difficulty: <span className="font-semibold text-primary">{room.difficulty}</span></p>
+    <div className="max-w-4xl mx-auto mt-12 animate-in fade-in zoom-in-95 slide-in-from-bottom-8 duration-1000">
+      <div className="text-center mb-12">
+        <div className="inline-block px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary font-black tracking-widest text-xs mb-4 uppercase shadow-[0_0_15px_rgba(0,229,255,0.1)]">
+          BATTLE ARENA
+        </div>
+        <h1 className="text-6xl font-black tracking-tighter text-white mb-3">Room: {room.id}</h1>
+        <div className="flex items-center justify-center gap-3">
+           <span className="h-px w-8 bg-white/10" />
+           <p className="text-slate-400 font-bold uppercase tracking-widest text-sm">
+             DIFFICULTY: <span className="text-primary drop-shadow-[0_0_8px_rgba(0,229,255,0.5)]">{room.difficulty}</span>
+           </p>
+           <span className="h-px w-8 bg-white/10" />
+        </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8 mb-8">
+      <div className="grid md:grid-cols-2 gap-10 mb-12">
         {/* Host Card */}
-        <Card className="border-4 border-blue-500 shadow-lg relative overflow-hidden">
-          <div className="absolute top-0 right-0 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">HOST</div>
-          <CardHeader className="text-center pb-2">
-            <CardTitle>Player 1</CardTitle>
+        <Card className="bg-card/40 backdrop-blur-xl border-4 border-primary/50 shadow-2xl shadow-primary/10 relative overflow-hidden rounded-[2.5rem] group transition-transform hover:scale-[1.02]">
+          <div className="absolute top-0 right-0 bg-primary text-black text-xs font-black px-5 py-1.5 rounded-bl-2xl shadow-lg">HOST</div>
+          <CardHeader className="text-center pb-2 pt-10">
+            <CardTitle className="text-slate-400 font-black tracking-widest uppercase text-xs">Player One</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col items-center justify-center py-6">
-            <div className="w-24 h-24 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden mb-4 border-2 border-blue-200">
+          <CardContent className="flex flex-col items-center justify-center py-8">
+            <div className="w-32 h-32 rounded-full bg-slate-900 flex items-center justify-center overflow-hidden mb-6 border-4 border-primary/20 shadow-[0_0_30px_rgba(0,229,255,0.2)] group-hover:shadow-primary/40 transition-all duration-500">
               {room.host.avatar_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={room.host.avatar_url} alt="Host Avatar" className="w-full h-full object-cover" />
               ) : (
-                <span className="text-3xl font-bold text-slate-400">{room.host.first_name?.[0] || 'H'}</span>
+                <span className="text-4xl font-black text-slate-600">{room.host.first_name?.[0] || 'H'}</span>
               )}
             </div>
-            <h3 className="text-xl font-bold">{room.host.first_name || 'Player'}</h3>
-            {isHost && <p className="text-sm text-blue-500 mt-1 font-medium">(You)</p>}
+            <h3 className="text-2xl font-black text-white">{room.host.first_name || 'Player'}</h3>
+            {isHost && <p className="text-sm text-primary mt-2 font-bold tracking-tight uppercase px-3 py-1 bg-primary/10 rounded-lg">YOU</p>}
           </CardContent>
         </Card>
 
         {/* Joiner Card */}
-        <Card className={`border-4 border-dashed shadow-md transition-all duration-300 ${hasJoiner ? 'border-primary border-solid bg-white' : 'border-slate-200 bg-slate-50'}`}>
-          <CardHeader className="text-center pb-2">
-            <CardTitle>{hasJoiner ? 'Player 2' : 'Waiting...'}</CardTitle>
+        <Card className={`backdrop-blur-xl border-4 shadow-2xl relative overflow-hidden rounded-[2.5rem] group transition-all duration-500 hover:scale-[1.02] ${hasJoiner ? 'border-secondary/50 bg-card/40 shadow-secondary/10' : 'border-dashed border-white/10 bg-white/5'}`}>
+          {hasJoiner && <div className="absolute top-0 right-0 bg-secondary text-white text-xs font-black px-5 py-1.5 rounded-bl-2xl shadow-lg">CHALLENGER</div>}
+          <CardHeader className="text-center pb-2 pt-10">
+            <CardTitle className="text-slate-400 font-black tracking-widest uppercase text-xs">{hasJoiner ? 'Player Two' : 'Awaiting Rival...'}</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col items-center justify-center py-6 h-[200px]">
+          <CardContent className="flex flex-col items-center justify-center py-8 h-[240px]">
             {hasJoiner ? (
               <>
-                <div className="w-24 h-24 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden mb-4 border-2 border-primary">
+                <div className="w-32 h-32 rounded-full bg-slate-900 flex items-center justify-center overflow-hidden mb-6 border-4 border-secondary/20 shadow-[0_0_30px_rgba(255,0,85,0.2)] group-hover:shadow-secondary/40 transition-all duration-500">
                   {room.joiner!.avatar_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={room.joiner!.avatar_url} alt="Joiner Avatar" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-3xl font-bold text-slate-400">{room.joiner!.first_name?.[0] || 'J'}</span>
+                    <span className="text-4xl font-black text-slate-600">{room.joiner!.first_name?.[0] || 'J'}</span>
                   )}
                 </div>
-                <h3 className="text-xl font-bold">{room.joiner!.first_name || 'Player'}</h3>
-                {!isHost && <p className="text-sm text-slate-500 mt-1 font-medium">(You)</p>}
+                <h3 className="text-2xl font-black text-white">{room.joiner!.first_name || 'Player'}</h3>
+                {!isHost && <p className="text-sm text-secondary mt-2 font-bold tracking-tight uppercase px-3 py-1 bg-secondary/10 rounded-lg">YOU</p>}
               </>
             ) : (
-              <Loader2 className="h-10 w-10 text-slate-300 animate-spin" />
+              <div className="flex flex-col items-center space-y-4">
+                <Loader2 className="h-14 w-14 text-slate-700 animate-[spin_3s_linear_infinite]" />
+                <p className="text-slate-600 font-bold uppercase tracking-widest text-xs animate-pulse">Waiting for entry...</p>
+              </div>
             )}
           </CardContent>
         </Card>
       </div>
 
-      <Card className="mb-4">
-         <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+      <Card className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+         <CardContent className="p-8 flex flex-col md:flex-row items-center justify-between gap-8">
            {isHost ? (
              <>
-               <Button onClick={copyLink} variant="outline" className="w-full md:w-auto font-mono text-sm h-12">
-                 <Copy className="mr-2 h-4 w-4" />
-                 {copied ? 'Copied Link!' : inviteLink}
+               <Button onClick={copyLink} variant="outline" className="w-full md:w-auto font-mono text-sm h-14 rounded-2xl border-white/10 bg-black/40 hover:bg-black/60 text-slate-300 transition-all px-6">
+                 <Copy className="mr-3 h-4 w-4" />
+                 {copied ? 'COPIED TO CLIPBOARD!' : `INVITE: ${inviteLink}`}
                </Button>
                <Button 
                  onClick={handleStartGame} 
-                 className="w-full md:w-auto h-12 px-8 text-lg font-bold"
+                 className="w-full md:w-auto h-14 px-12 text-xl font-black rounded-2xl bg-primary hover:bg-primary/90 text-black shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
                  disabled={starting}
                >
-                 {starting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Play className="mr-2 h-5 w-5" fill="currentColor" />}
-                 {hasJoiner ? 'Start Match' : 'Start Solo'}
+                 {starting ? <Loader2 className="mr-3 h-6 w-6 animate-spin" /> : <Play className="mr-3 h-6 w-6" fill="currentColor" />}
+                 {hasJoiner ? 'INITIALIZE BATTLE' : 'START SOLO RUN'}
                </Button>
              </>
            ) : (
-             <div className="text-center w-full py-2">
-               <p className="text-lg font-medium text-slate-600 flex items-center justify-center gap-2">
-                 <Loader2 className="h-5 w-5 animate-spin" />
-                 Waiting for Host to start the game...
-               </p>
+             <div className="text-center w-full py-4">
+               <div className="flex items-center justify-center gap-4 text-2xl font-black text-white tracking-tight">
+                 <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                 WAITING FOR HOST TO COMMENCE...
+               </div>
              </div>
            )}
          </CardContent>

@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import LobbyClient from './lobby-client'
 
 export default async function LobbyPage(props: { params: Promise<{ code: string }> }) {
@@ -26,20 +27,30 @@ export default async function LobbyPage(props: { params: Promise<{ code: string 
 
   if (error || !room) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-        <h1 className="text-2xl font-bold">Room not found</h1>
-        <p className="text-muted-foreground">The room code {roomCode} is invalid or has expired.</p>
-        <a href="/dashboard" className="text-blue-500 hover:underline">Go back to Dashboard</a>
+      <div className="flex flex-col items-center justify-center min-h-[80vh] space-y-6 animate-in fade-in duration-700">
+        <div className="p-4 rounded-3xl bg-destructive/10 border border-destructive/20 shadow-[0_0_30px_rgba(255,51,51,0.1)]">
+          <h1 className="text-3xl font-black text-white">Room Not Found</h1>
+        </div>
+        <p className="text-slate-400 font-medium text-lg text-center max-w-md">
+          The code <span className="text-white font-mono">{roomCode}</span> is invalid or has expired.
+        </p>
+        <Link href="/dashboard" className="text-primary hover:text-primary/80 font-bold text-lg transition-colors underline decoration-primary/30 underline-offset-4">
+          Return to Dashboard
+        </Link>
       </div>
     )
   }
 
   if (room.status === 'completed') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-        <h1 className="text-2xl font-bold">Game Completed</h1>
-        <p className="text-muted-foreground">This game has already finished.</p>
-        <a href="/dashboard" className="text-blue-500 hover:underline">Go back to Dashboard</a>
+      <div className="flex flex-col items-center justify-center min-h-[80vh] space-y-6 animate-in fade-in duration-700">
+        <div className="p-4 rounded-3xl bg-primary/10 border border-primary/20 shadow-[0_0_30px_rgba(0,229,255,0.1)]">
+          <h1 className="text-3xl font-black text-white">Arena Cleared</h1>
+        </div>
+        <p className="text-slate-400 font-medium text-lg">This game has already finished.</p>
+        <Link href="/dashboard" className="text-primary hover:text-primary/80 font-bold text-lg transition-colors underline decoration-primary/30 underline-offset-4">
+          Return to Dashboard
+        </Link>
       </div>
     )
   }
@@ -52,13 +63,18 @@ export default async function LobbyPage(props: { params: Promise<{ code: string 
     if (room.joiner_id) {
        // Room is full
        return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-          <h1 className="text-2xl font-bold">Room Full</h1>
-          <p className="text-muted-foreground">There are already 2 players in this room.</p>
-          <a href="/dashboard" className="text-blue-500 hover:underline">Go back to Dashboard</a>
+        <div className="flex flex-col items-center justify-center min-h-[80vh] space-y-6 animate-in fade-in duration-700">
+          <div className="p-4 rounded-3xl bg-secondary/10 border border-secondary/20 shadow-[0_0_30px_rgba(255,0,85,0.1)]">
+            <h1 className="text-3xl font-black text-white">Arena Full</h1>
+          </div>
+          <p className="text-slate-400 font-medium text-lg">There are already 2 players in this room.</p>
+          <Link href="/dashboard" className="text-primary hover:text-primary/80 font-bold text-lg transition-colors underline decoration-primary/30 underline-offset-4">
+            Return to Dashboard
+          </Link>
         </div>
       )
-    } else {
+    } 
+else {
       // User is the joiner! Join the room.
       await supabase
         .from('rooms')

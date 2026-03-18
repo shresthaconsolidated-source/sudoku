@@ -5,6 +5,8 @@ import { Trophy, Swords, Zap, Users } from 'lucide-react'
 import Link from 'next/link'
 import JoinRoomForm from './join-room-form'
 
+import RankBadge from '@/components/ui/rank-badge'
+
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -19,65 +21,69 @@ export default async function DashboardPage() {
     .single()
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-          Welcome back, {profile?.first_name || 'Player'}!
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Ready for another mental workout?
-        </p>
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-black tracking-tight text-white mb-2">
+            Welcome back, <span className="text-primary">{profile?.first_name || 'Player'}</span>!
+          </h1>
+          <p className="text-slate-400 font-medium text-lg">
+            Master the grid. Dominate the leaderboard.
+          </p>
+        </div>
+        <RankBadge mmr={profile?.mmr || 1000} className="scale-125 origin-left md:origin-right" />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-l-4 border-l-blue-500">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Completed</CardTitle>
-            <Trophy className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{profile?.total_completed || 0}</div>
-          </CardContent>
-        </Card>
-        <Card className="border-l-4 border-l-green-500">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Win Rate</CardTitle>
-            <Zap className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{profile?.win_rate || '0'}%</div>
-          </CardContent>
-        </Card>
+      <div className="grid gap-6 md:grid-cols-3">
+        {[
+          { label: 'Total Completed', value: profile?.total_completed || 0, icon: Trophy, color: 'text-yellow-400' },
+          { label: 'Win Rate', value: `${profile?.win_rate || '0'}%`, icon: Zap, color: 'text-primary' },
+          { label: 'MMR Rating', value: profile?.mmr || 1000, icon: Swords, color: 'text-secondary' },
+        ].map((stat, i) => (
+          <Card key={i} className="bg-card/40 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden shadow-xl">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-bold tracking-wider uppercase text-slate-400">{stat.label}</CardTitle>
+              <stat.icon className={`h-5 w-5 ${stat.color} drop-shadow-[0_0_8px_currentColor]`} />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-black text-white">{stat.value}</div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card className="hover:border-blue-500 transition-colors shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Swords className="h-5 w-5 text-blue-500" />
-              Host a Game
+      <div className="grid gap-8 md:grid-cols-2 pt-4">
+        <Card className="bg-card/40 backdrop-blur-lg border border-white/10 rounded-3xl overflow-hidden hover:border-primary/50 transition-all group shadow-2xl">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-3 text-2xl font-extrabold text-white">
+              <div className="p-2 rounded-xl bg-primary/10 border border-primary/20 group-hover:scale-110 transition-transform">
+                <Swords className="h-6 w-6 text-primary" />
+              </div>
+              Host a Battle
             </CardTitle>
-            <CardDescription>
-              Create a new room, invite a friend, and race to finish the puzzle.
+            <CardDescription className="text-slate-400 font-medium text-base">
+              Create a new room and challenge a friend in a real-time race. 
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Link href="/dashboard/host" className="w-full">
-              <Button className="w-full bg-blue-600 hover:bg-blue-700 h-12 text-md">
-                Create Room
+              <Button className="w-full bg-primary hover:bg-primary/90 text-black font-black h-14 text-lg rounded-2xl shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95">
+                START NEW ARENA
               </Button>
             </Link>
           </CardContent>
         </Card>
 
-        <Card className="hover:border-indigo-500 transition-colors shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-indigo-500" />
-              Join a Game
+        <Card className="bg-card/40 backdrop-blur-lg border border-white/10 rounded-3xl overflow-hidden hover:border-secondary/50 transition-all group shadow-2xl">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-3 text-2xl font-extrabold text-white">
+              <div className="p-2 rounded-xl bg-secondary/10 border border-secondary/20 group-hover:scale-110 transition-transform">
+                <Users className="h-6 w-6 text-secondary" />
+              </div>
+              Join Arena
             </CardTitle>
-            <CardDescription>
-              Have an invite code? Enter it below to join your friend's lobby.
+            <CardDescription className="text-slate-400 font-medium text-base">
+              Got a secret invite code? Enter it here to enter the battle.
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -9,6 +9,7 @@ create table if not exists users (
   avatar_url text,
   total_completed integer default 0,
   win_rate numeric default 0.0,
+  mmr integer default 1000,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
@@ -64,3 +65,24 @@ create table if not exists leaderboard (
 -- Enable Realtime for Rooms and Game State
 alter publication supabase_realtime add table rooms;
 alter publication supabase_realtime add table game_state;
+
+-- RPC Functions for Metagame Progression
+-- Use via supabase.rpc('increment_completed', { target_user_id: '...' })
+CREATE OR REPLACE FUNCTION increment_completed(target_user_id uuid)
+RETURNS void AS $$
+BEGIN
+  UPDATE users 
+  SET total_completed = total_completed + 1
+  WHERE id = target_user_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Use via supabase.rpc('increment_mmr', { target_user_id: '...', amount: 20 })
+CREATE OR REPLACE FUNCTION increment_mmr(target_user_id uuid, amount int)
+RETURNS void AS $$
+BEGIN
+  UPDATE users 
+  SET mmr = mmr + amount
+  WHERE id = target_user_id;
+END;
+$$ LANGUAGE plpgsql;

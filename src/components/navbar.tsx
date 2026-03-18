@@ -17,28 +17,30 @@ export default async function Navbar() {
     .single()
 
   return (
-    <nav className="border-b bg-white">
-      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="rounded-lg bg-blue-500 p-1.5">
-            <Grid3X3 className="h-5 w-5 text-white" />
+    <nav className="sticky top-0 z-50 border-b border-white/10 bg-background/60 backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
+        <Link href="/dashboard" className="flex items-center gap-3 transition-transform hover:scale-105 active:scale-95">
+          <div className="rounded-xl bg-primary/10 p-2 border border-primary/20 shadow-[0_0_15px_rgba(0,229,255,0.15)]">
+            <Grid3X3 className="h-6 w-6 text-primary" />
           </div>
-          <span className="text-xl font-bold tracking-tight">Sudoku Multi</span>
+          <span className="text-2xl font-extrabold tracking-tighter text-white">Sudoku Multi</span>
         </Link>
         <div className="flex items-center gap-4">
           <Link href="/profile">
-            <Button variant="ghost" size="sm" className="gap-2">
+            <Button variant="ghost" size="sm" className="gap-2 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition-all">
               {profile?.avatar_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={profile.avatar_url} alt="Profile" className="h-6 w-6 rounded-full" />
+                <img src={profile.avatar_url} alt="Profile" className="h-7 w-7 rounded-full border border-white/20 shadow-sm" />
               ) : (
-                <UserIcon className="h-5 w-5" />
+                <div className="h-7 w-7 rounded-full bg-slate-800 flex items-center justify-center border border-white/10">
+                  <UserIcon className="h-4 w-4 text-slate-400" />
+                </div>
               )}
-              <span className="hidden sm:inline-block font-medium">{profile?.first_name || 'Profile'}</span>
+              <span className="hidden sm:inline-block font-bold tracking-tight">{profile?.first_name || 'Profile'}</span>
             </Button>
           </Link>
           <form action="/auth/logout" method="post">
-            <Button variant="outline" size="sm">Sign out</Button>
+            <Button variant="outline" size="sm" className="rounded-xl border-white/10 bg-white/5 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 transition-all font-bold">Sign out</Button>
           </form>
         </div>
       </div>
