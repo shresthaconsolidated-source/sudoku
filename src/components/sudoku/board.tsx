@@ -17,9 +17,9 @@ type BoardState = CellContent[][]
 interface SudokuBoardProps {
   initialGrid: (number | null)[][]
   solutionGrid: number[][]
-  currentGrid: BoardState | null
+  currentGrid: any[][]
   opponentCursor?: { r: number, c: number, name?: string } | null
-  onCellUpdate: (row: number, col: number, newData: CellContent, newState: BoardState) => void
+  onCellUpdate: (row: number, col: number, newData: any, newState: any) => void
   onCursorMove?: (r: number, c: number, prevR?: number, prevC?: number) => void
   lockedCells?: Record<string, { userId: string, name: string }>
   currentUser?: string

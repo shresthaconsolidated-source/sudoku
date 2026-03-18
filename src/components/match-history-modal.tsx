@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog"
 import { Trophy, Clock, AlertTriangle } from 'lucide-react'
 
-export default function MatchHistoryModal({ children, userId }: { children: React.ReactNode, userId: string }) {
+export default function MatchHistoryModal({ children, userId }: { children: React.ReactElement, userId: string }) {
   const [history, setHistory] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
@@ -54,9 +54,7 @@ export default function MatchHistoryModal({ children, userId }: { children: Reac
 
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
+      <DialogTrigger render={children} />
       <DialogContent className="sm:max-w-[500px] bg-[#0A0A0A]/95 backdrop-blur-2xl border-white/10 text-white rounded-[3rem] p-8 shadow-2xl">
         <DialogHeader className="mb-6">
           <DialogTitle className="text-3xl font-black tracking-tighter flex items-center gap-3">
