@@ -124,7 +124,7 @@ export default function SudokuBoard({ initialGrid, solutionGrid, currentGrid, on
     <div className="flex flex-col items-center select-none w-full max-w-lg mx-auto">
       {/* The 9x9 Grid */}
       <div 
-        className="grid grid-cols-9 grid-rows-9 gap-0 border-4 border-slate-800 bg-slate-800 w-full aspect-square touch-manipulation"
+        className="grid grid-cols-9 grid-rows-9 gap-0 border-4 border-slate-700/50 bg-slate-900/50 w-full aspect-square touch-manipulation rounded-sm overflow-hidden shadow-2xl shadow-primary/10"
       >
         {board.map((row, r) => 
           row.map((cell, c) => {
@@ -133,16 +133,16 @@ export default function SudokuBoard({ initialGrid, solutionGrid, currentGrid, on
             const isBottomBorder = r === 2 || r === 5
             
             // Determine cell background classes
-            let bgClass = 'bg-white'
-            if (isSelected(r, c)) bgClass = 'bg-blue-200'
-            else if (isSameValueHighlight(r, c)) bgClass = 'bg-blue-300' // Darker blue for same numbers
-            else if (isPeer(r, c)) bgClass = 'bg-slate-100' // Light gray for row/col/block peers
+            let bgClass = 'bg-card/40 backdrop-blur-sm'
+            if (isSelected(r, c)) bgClass = 'bg-primary/30'
+            else if (isSameValueHighlight(r, c)) bgClass = 'bg-primary/50'
+            else if (isPeer(r, c)) bgClass = 'bg-white/5'
 
             // Determine text color
-            let textClass = 'text-slate-800'
-            if (cell && cell.isGiven) textClass = 'text-slate-900 font-bold'
-            else if (cell && cell.isError) textClass = 'text-red-500 font-medium'
-            else textClass = 'text-blue-600 font-medium' // User entered correct
+            let textClass = 'text-slate-300'
+            if (cell && cell.isGiven) textClass = 'text-white font-medium'
+            else if (cell && cell.isError) textClass = 'text-destructive font-bold drop-shadow-[0_0_8px_rgba(255,51,51,0.8)]'
+            else textClass = 'text-primary font-bold drop-shadow-[0_0_8px_rgba(0,229,255,0.8)]' // User entered correct
 
             return (
               <div 
@@ -150,10 +150,10 @@ export default function SudokuBoard({ initialGrid, solutionGrid, currentGrid, on
                 onClick={() => handleCellClick(r, c)}
                 className={`
                   relative flex items-center justify-center text-xl sm:text-2xl md:text-3xl lg:text-4xl 
-                  transition-colors duration-100 cursor-pointer border border-slate-300
+                  transition-colors duration-200 cursor-pointer border border-white/10
                   ${bgClass} ${textClass}
-                  ${isRightBorder ? 'border-r-slate-800 border-r-2' : ''}
-                  ${isBottomBorder ? 'border-b-slate-800 border-b-2' : ''}
+                  ${isRightBorder ? 'border-r-slate-500/50 border-r-[3px]' : ''}
+                  ${isBottomBorder ? 'border-b-slate-500/50 border-b-[3px]' : ''}
                 `}
               >
                 {cell && cell.value ? (
@@ -163,7 +163,7 @@ export default function SudokuBoard({ initialGrid, solutionGrid, currentGrid, on
                   cell && (cell.notes || []).length > 0 && (
                     <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 p-1">
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
-                        <div key={n} className="flex items-center justify-center text-[8px] sm:text-[10px] md:text-xs text-slate-500 leading-none">
+                        <div key={n} className="flex items-center justify-center text-[8px] sm:text-[10px] md:text-xs text-slate-400 font-medium leading-none">
                           {(cell.notes || []).includes(n) ? n : ''}
                         </div>
                       ))}
@@ -179,14 +179,14 @@ export default function SudokuBoard({ initialGrid, solutionGrid, currentGrid, on
       {/* Controls Bar */}
       <div className="flex items-center justify-between w-full mt-6 px-2">
          <button 
-           className={`px-4 py-2 rounded-lg font-medium transition-colors ${isNotesMode ? 'bg-blue-100 text-blue-700 border border-blue-300' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+           className={`px-6 py-3 rounded-xl font-bold transition-all shadow-lg ${isNotesMode ? 'bg-primary/20 text-primary border border-primary/50 shadow-primary/20 scale-105' : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'}`}
            onClick={() => setIsNotesMode(!isNotesMode)}
          >
            ✏️ Notes ({isNotesMode ? 'ON' : 'OFF'})
          </button>
 
          <button 
-           className="px-4 py-2 rounded-lg font-medium bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
+           className="px-6 py-3 rounded-xl font-bold bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/30 transition-all shadow-lg shadow-destructive/10"
            onClick={() => {
              if (selectedCell && !board[selectedCell.r][selectedCell.c].isGiven) {
                 const newBoard = [...board.map(r => [...r])]
@@ -202,11 +202,11 @@ export default function SudokuBoard({ initialGrid, solutionGrid, currentGrid, on
       </div>
 
       {/* Number Pad (for mobile / mouse users) */}
-      <div className="grid grid-cols-9 gap-1 sm:gap-2 w-full mt-4">
+      <div className="grid grid-cols-9 gap-1 sm:gap-2 w-full mt-6 px-1">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
           <button
             key={num}
-            className="aspect-square bg-slate-100 hover:bg-blue-100 hover:text-blue-700 rounded-lg text-lg sm:text-2xl font-semibold text-slate-700 transition-colors border border-slate-200"
+            className="aspect-square bg-slate-800/80 backdrop-blur hover:bg-primary/20 hover:text-primary rounded-xl text-lg sm:text-2xl font-bold text-slate-200 transition-all border border-slate-700/50 shadow-lg"
             onClick={() => {
               if (selectedCell && !board[selectedCell.r][selectedCell.c].isGiven) {
                 // Manually trigger the keyboard logic payload
