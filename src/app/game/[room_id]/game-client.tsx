@@ -76,7 +76,7 @@ export default function GameClient({ room, initialGameState, currentUser }: { ro
 
   // Count mistakes & Win logic
   useEffect(() => {
-    if (!gameState.current_grid) return
+    if (!gameState?.current_grid) return
     let m = 0
     const solution = room.puzzle.solution_grid
     gameState.current_grid.forEach((row: any[], r: number) => {
@@ -158,7 +158,7 @@ export default function GameClient({ room, initialGameState, currentUser }: { ro
 
   // Calculate team progress
   const getProgress = () => {
-    if (!gameState.current_grid) return 0
+    if (!gameState?.current_grid) return 0
     let filled = 0
     const solution = room.puzzle.solution_grid
     gameState.current_grid.forEach((row: any[], r: number) => {
@@ -210,7 +210,7 @@ export default function GameClient({ room, initialGameState, currentUser }: { ro
      }
   }
 
-  const boardData = gameState.current_grid?.length > 0 && gameState.current_grid[0][0] !== null
+  const boardData = gameState?.current_grid?.length > 0 && gameState.current_grid[0][0] !== null
     ? gameState.current_grid 
     : room.puzzle.initial_grid.map((row: (number | null)[]) => 
         row.map((val: number | null) => ({ value: val, notes: [], isGiven: val !== null, isError: false }))

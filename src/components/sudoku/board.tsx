@@ -33,14 +33,14 @@ const SudokuCell = React.memo(({
   else if (isPeer) bgClass = 'bg-white/[0.02]'
 
   let textClass = 'text-slate-400'
-  if (cell.isGiven) textClass = 'text-white font-black'
-  else if (cell.isError) textClass = 'text-destructive font-black drop-shadow-[0_0_12px_rgba(255,51,51,0.6)]'
-  else if (cell.value) textClass = 'text-primary font-black drop-shadow-[0_0_12px_rgba(0,229,255,0.6)]'
+  if (cell?.isGiven) textClass = 'text-white font-black'
+  else if (cell?.isError) textClass = 'text-destructive font-black drop-shadow-[0_0_12px_rgba(255,51,51,0.6)]'
+  else if (cell?.value) textClass = 'text-primary font-black drop-shadow-[0_0_12px_rgba(0,229,255,0.6)]'
 
   return (
     <motion.div
       onClick={onClick}
-      animate={cell.isError ? { x: [0, -2, 2, -2, 2, 0] } : {}}
+      animate={cell?.isError ? { x: [0, -2, 2, -2, 2, 0] } : {}}
       className={`
         relative flex items-center justify-center text-xl sm:text-2xl md:text-3xl lg:text-4xl
         cursor-pointer border-[0.5px] border-white/5
@@ -162,7 +162,8 @@ export default function SudokuBoard({ initialGrid, solutionGrid, currentGrid, op
           row.map((cell, c) => {
             const isSelected = selectedCell?.r === r && selectedCell?.c === c
             const isOpponent = opponentCursor?.r === r && opponentCursor?.c === c
-            const isSameValue = selectedCell && board[selectedCell.r][selectedCell.c].value !== null && board[selectedCell.r][selectedCell.c].value === cell.value && !isSelected
+            const selectedVal = selectedCell ? board[selectedCell.r]?.[selectedCell.c]?.value : null
+            const isSameValue = selectedCell && selectedVal !== null && selectedVal === cell?.value && !isSelected
             
             let isPeer = false
             if (selectedCell && !isSelected) {
