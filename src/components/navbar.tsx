@@ -18,7 +18,7 @@ export default async function Navbar() {
     .single()
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-white/10 bg-background/60 backdrop-blur-md">
+    <nav className="sticky top-0 z-50 border-b border-white/[0.05] bg-[#0A0A0A]/60 backdrop-blur-xl transition-all duration-500 shadow-2xl">
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
         <Link href="/dashboard" className="flex items-center gap-3 transition-transform hover:scale-105 active:scale-95">
           <div className="rounded-xl bg-primary/10 p-2 border border-primary/20 shadow-[0_0_15px_rgba(0,229,255,0.15)]">
