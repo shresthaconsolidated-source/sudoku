@@ -210,7 +210,7 @@ export default function GameClient({ room, initialGameState, currentUser }: { ro
      }
   }
 
-  const boardData = gameState?.current_grid?.length > 0 && gameState.current_grid[0][0] !== null
+  const boardData = (gameState?.current_grid?.length > 0 && typeof gameState.current_grid[0][0] === 'object' && gameState.current_grid[0][0] !== null)
     ? gameState.current_grid 
     : room.puzzle.initial_grid.map((row: (number | null)[]) => 
         row.map((val: number | null) => ({ value: val, notes: [], isGiven: val !== null, isError: false }))

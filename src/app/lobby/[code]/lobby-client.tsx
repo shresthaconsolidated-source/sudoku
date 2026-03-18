@@ -104,9 +104,13 @@ export default function LobbyClient({ initialRoom, currentUser }: { initialRoom:
     // Create initial game state row
     const { data: puzzle } = await supabase.from('puzzles').select('initial_grid').eq('id', room.puzzle_id).single()
     
+    const mappedGrid = puzzle?.initial_grid?.map((row: any[]) => 
+      row.map(val => ({ value: val, notes: [], isGiven: val !== null, isError: false }))
+    ) || []
+
     await supabase.from('game_state').insert({
       room_id: room.id,
-      current_grid: puzzle?.initial_grid || {},
+      current_grid: mappedGrid,
       start_time: new Date().toISOString()
     })
 
