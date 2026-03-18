@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import Link from 'next/link'
 import { Button } from './ui/button'
 import { Grid3X3, User as UserIcon } from 'lucide-react'
+import LogoutButton from './logout-button'
 
 export default async function Navbar() {
   const supabase = await createClient()
@@ -39,9 +40,7 @@ export default async function Navbar() {
               <span className="hidden sm:inline-block font-bold tracking-tight">{profile?.first_name || 'Profile'}</span>
             </Button>
           </Link>
-          <form action="/auth/logout" method="post">
-            <Button variant="outline" size="sm" className="rounded-xl border-white/10 bg-white/5 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 transition-all font-bold">Sign out</Button>
-          </form>
+          <LogoutButton />
         </div>
       </div>
     </nav>

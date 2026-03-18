@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 type CellContent = {
@@ -21,6 +21,69 @@ interface SudokuBoardProps {
   onCursorMove?: (r: number, c: number) => void
 }
 
+const SudokuCell = React.memo(({ 
+  r, c, cell, isSelected, isOpponent, isPeer, isSameValue, isRightBorder, isBottomBorder, onClick 
+}: { 
+  r: number, c: number, cell: CellContent, isSelected: boolean, isOpponent: boolean, isPeer: boolean, isSameValue: boolean, isRightBorder: boolean, isBottomBorder: boolean, onClick: () => void 
+}) => {
+  let bgClass = 'bg-card/40 backdrop-blur-md'
+  if (isSelected) bgClass = 'bg-primary/20 ring-inset ring-2 ring-primary/50'
+  else if (isOpponent) bgClass = 'bg-secondary/20 ring-inset ring-2 ring-secondary/50'
+  else if (isSameValue) bgClass = 'bg-white/10'
+  else if (isPeer) bgClass = 'bg-white/[0.02]'
+
+  let textClass = 'text-slate-400'
+  if (cell.isGiven) textClass = 'text-white font-black'
+  else if (cell.isError) textClass = 'text-destructive font-black drop-shadow-[0_0_12px_rgba(255,51,51,0.6)]'
+  else if (cell.value) textClass = 'text-primary font-black drop-shadow-[0_0_12px_rgba(0,229,255,0.6)]'
+
+  return (
+    <motion.div
+      onClick={onClick}
+      animate={cell.isError ? { x: [0, -2, 2, -2, 2, 0] } : {}}
+      className={`
+        relative flex items-center justify-center text-xl sm:text-2xl md:text-3xl lg:text-4xl
+        cursor-pointer border-[0.5px] border-white/5
+        ${bgClass} ${textClass}
+        ${isRightBorder ? 'border-r-slate-700/80 border-r-[4px]' : ''}
+        ${isBottomBorder ? 'border-b-slate-700/80 border-b-[4px]' : ''}
+      `}
+    >
+      {cell.value ? (
+        <motion.span
+          key={`${r}-${c}-${cell.value}`}
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 300, damping: 15 }}
+        >
+          {cell.value}
+        </motion.span>
+      ) : (
+        <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 p-1 opacity-60">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+            <div key={n} className="flex items-center justify-center text-[8px] sm:text-[10px] md:text-xs text-slate-500 font-bold">
+              {cell.notes.includes(n) ? n : ''}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <AnimatePresence>
+        {isOpponent && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="absolute bottom-1 right-1 w-2.5 h-2.5 bg-secondary rounded-full shadow-[0_0_10px_#FF0055]"
+          />
+        )}
+      </AnimatePresence>
+    </motion.div>
+  )
+})
+
+SudokuCell.displayName = 'SudokuCell'
+
 export default function SudokuBoard({ initialGrid, solutionGrid, currentGrid, opponentCursor, onCellUpdate, onCursorMove }: SudokuBoardProps) {
   const [board, setBoard] = useState<BoardState>(() => {
     if (currentGrid) return currentGrid
@@ -36,12 +99,12 @@ export default function SudokuBoard({ initialGrid, solutionGrid, currentGrid, op
   const [selectedCell, setSelectedCell] = useState<{r: number, c: number} | null>(null)
   const [isNotesMode, setIsNotesMode] = useState(false)
 
-  const handleCellClick = (r: number, c: number) => {
+  const handleCellClick = useCallback((r: number, c: number) => {
     setSelectedCell({ r, c })
     onCursorMove?.(r, c)
-  }
+  }, [onCursorMove])
 
-  const handleKeyDown = (e: KeyboardEvent | { key: string }) => {
+  const handleKeyDown = useCallback((e: KeyboardEvent | { key: string }) => {
     if (!selectedCell) return
     const { r, c } = selectedCell
     const cell = board[r][c]
@@ -49,7 +112,7 @@ export default function SudokuBoard({ initialGrid, solutionGrid, currentGrid, op
     if (e.key >= '1' && e.key <= '9') {
       if (cell.isGiven) return
       const num = parseInt(e.key)
-      const newBoard = [...board.map(row => [...row])]
+      const newBoard = board.map(row => [...row])
       const newCell = { ...newBoard[r][c] }
 
       if (isNotesMode) {
@@ -69,111 +132,61 @@ export default function SudokuBoard({ initialGrid, solutionGrid, currentGrid, op
       onCellUpdate(r, c, newCell, newBoard)
     } else if (e.key === 'Backspace' || e.key === 'Delete') {
       if (cell.isGiven) return
-      const newBoard = [...board.map(row => [...row])]
+      const newBoard = board.map(row => [...row])
       const newCell = { ...newBoard[r][c], value: null, isError: false }
       newBoard[r][c] = newCell
       setBoard(newBoard)
       onCellUpdate(r, c, newCell, newBoard)
-    } else if ('preventDefault' in e && e.key.startsWith('Arrow')) {
-      e.preventDefault()
+    } else if ('preventDefault' in e && (e as KeyboardEvent).key?.startsWith('Arrow')) {
+      (e as KeyboardEvent).preventDefault()
       let nr = r, nc = c
-      if (e.key === 'ArrowUp' && r > 0) nr--
-      if (e.key === 'ArrowDown' && r < 8) nr++
-      if (e.key === 'ArrowLeft' && c > 0) nc--
-      if (e.key === 'ArrowRight' && c < 8) nc++
+      if ((e as KeyboardEvent).key === 'ArrowUp' && r > 0) nr--
+      if ((e as KeyboardEvent).key === 'ArrowDown' && r < 8) nr++
+      if ((e as KeyboardEvent).key === 'ArrowLeft' && c > 0) nc--
+      if ((e as KeyboardEvent).key === 'ArrowRight' && c < 8) nc++
       setSelectedCell({ r: nr, c: nc })
       onCursorMove?.(nr, nc)
     }
-  }
+  }, [selectedCell, board, isNotesMode, solutionGrid, onCellUpdate, onCursorMove])
 
   useEffect(() => {
     const listener = (e: KeyboardEvent) => handleKeyDown(e)
     window.addEventListener('keydown', listener)
     return () => window.removeEventListener('keydown', listener)
-  }, [selectedCell, board, isNotesMode]) // Dependencies to ensure handlers have fresh state
-
-  const isSelected = (r: number, c: number) => selectedCell?.r === r && selectedCell?.c === c
-  const isOpponentHere = (r: number, c: number) => opponentCursor?.r === r && opponentCursor?.c === c
-
-  const isPeer = (r: number, c: number) => {
-    if (!selectedCell) return false
-    if (isSelected(r, c)) return false
-    if (selectedCell.r === r || selectedCell.c === c) return true
-    const blockR = Math.floor(selectedCell.r / 3) * 3
-    const blockC = Math.floor(selectedCell.c / 3) * 3
-    return r >= blockR && r < blockR + 3 && c >= blockC && c < blockC + 3
-  }
-
-  const isSameValueHighlight = (r: number, c: number) => {
-    if (!selectedCell) return false
-    const selVal = board[selectedCell.r][selectedCell.c].value
-    return selVal !== null && selVal === board[r][c].value && !isSelected(r, c)
-  }
+  }, [handleKeyDown])
 
   return (
     <div className="flex flex-col items-center select-none w-full max-w-lg mx-auto px-4">
       <div className="grid grid-cols-9 grid-rows-9 gap-0 border-[6px] border-slate-800/80 bg-slate-900/50 w-full aspect-square touch-manipulation rounded-xl overflow-hidden shadow-2xl shadow-primary/5 transition-transform duration-500">
         {board.map((row, r) =>
           row.map((cell, c) => {
-            const isRightBorder = c === 2 || c === 5
-            const isBottomBorder = r === 2 || r === 5
-
-            let bgClass = 'bg-card/40 backdrop-blur-md'
-            if (isSelected(r, c)) bgClass = 'bg-primary/20 ring-inset ring-2 ring-primary/50'
-            else if (isOpponentHere(r, c)) bgClass = 'bg-secondary/20 ring-inset ring-2 ring-secondary/50'
-            else if (isSameValueHighlight(r, c)) bgClass = 'bg-white/10'
-            else if (isPeer(r, c)) bgClass = 'bg-white/[0.02]'
-
-            let textClass = 'text-slate-400'
-            if (cell?.isGiven) textClass = 'text-white font-black'
-            else if (cell?.isError) textClass = 'text-destructive font-black drop-shadow-[0_0_12px_rgba(255,51,51,0.6)]'
-            else if (cell?.value) textClass = 'text-primary font-black drop-shadow-[0_0_12px_rgba(0,229,255,0.6)]'
+            const isSelected = selectedCell?.r === r && selectedCell?.c === c
+            const isOpponent = opponentCursor?.r === r && opponentCursor?.c === c
+            const isSameValue = selectedCell && board[selectedCell.r][selectedCell.c].value !== null && board[selectedCell.r][selectedCell.c].value === cell.value && !isSelected
+            
+            let isPeer = false
+            if (selectedCell && !isSelected) {
+               if (selectedCell.r === r || selectedCell.c === c) isPeer = true
+               else {
+                 const blockR = Math.floor(selectedCell.r / 3) * 3
+                 const blockC = Math.floor(selectedCell.c / 3) * 3
+                 if (r >= blockR && r < blockR + 3 && c >= blockC && c < blockC + 3) isPeer = true
+               }
+            }
 
             return (
-              <motion.div
+              <SudokuCell 
                 key={`${r}-${c}`}
+                r={r} c={c}
+                cell={cell}
+                isSelected={isSelected}
+                isOpponent={isOpponent}
+                isPeer={isPeer}
+                isSameValue={!!isSameValue}
+                isRightBorder={c === 2 || c === 5}
+                isBottomBorder={r === 2 || r === 5}
                 onClick={() => handleCellClick(r, c)}
-                animate={cell?.isError ? { x: [0, -2, 2, -2, 2, 0] } : {}}
-                className={`
-                  relative flex items-center justify-center text-xl sm:text-2xl md:text-3xl lg:text-4xl
-                  cursor-pointer border-[0.5px] border-white/5
-                  ${bgClass} ${textClass}
-                  ${isRightBorder ? 'border-r-slate-700/80 border-r-[4px]' : ''}
-                  ${isBottomBorder ? 'border-b-slate-700/80 border-b-[4px]' : ''}
-                `}
-              >
-                {cell?.value ? (
-                  <motion.span
-                    initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 15 }}
-                  >
-                    {cell.value}
-                  </motion.span>
-                ) : (
-                  cell && (cell.notes || []).length > 0 && (
-                    <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 p-1 opacity-60">
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
-                        <div key={n} className="flex items-center justify-center text-[8px] sm:text-[10px] md:text-xs text-slate-500 font-bold">
-                          {(cell.notes || []).includes(n) ? n : ''}
-                        </div>
-                      ))}
-                    </div>
-                  )
-                )}
-
-                {/* Opponent Cursor Indicator */}
-                <AnimatePresence>
-                  {isOpponentHere(r, c) && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      className="absolute bottom-1 right-1 w-2.5 h-2.5 bg-secondary rounded-full shadow-[0_0_10px_#FF0055]"
-                    />
-                  )}
-                </AnimatePresence>
-              </motion.div>
+              />
             )
           })
         )}
